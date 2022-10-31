@@ -176,4 +176,7 @@ template <typename T, int BITS> void spmm_coo_very_sparse_naive(int *max_count, 
 
 template <int FORMAT> void extractOutliers(char * A, int *idx, char *out, int idx_size, int rows, int cols);
 
+template <typename T> void quantkbit(T* A, float *absmax, double *out, int ld, int num_elements, int k);
+template <typename T> void dequantkbit(double* A, float *absmax, T *out, int ld, int num_elements, int k);
+
 #endif

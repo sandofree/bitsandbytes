@@ -108,6 +108,9 @@ void transform_row2ampereT(char * A, char *out, int rows, int cols){ transformRo
 void extractOutliers_turing(char * A, int *idx, char *out, int idx_size, int rows, int cols){ extractOutliers<COL_TURING>(A, idx, out, idx_size, rows, cols); }
 void extractOutliers_ampere(char * A, int *idx, char *out, int idx_size, int rows, int cols){ extractOutliers<COL_AMPERE>(A, idx, out, idx_size, rows, cols); }
 
+void quantkbit_half(half* A, float *absmax, double *out, int ld, int num_elements, int k){ quantkbit<half>(A, absmax, out, ld, num_elements, k); }
+void dequantkbit_half(double* A, float *absmax, half *out, int ld, int num_elements, int k){ dequantkbit<half>(A, absmax, out, ld, num_elements, k); }
+
  int igemmlt_turing_32(cublasLtHandle_t ltHandle, int m, int n, int k, const int8_t *A, const int8_t *B, void *C, float *row_scale, int lda, int ldb, int ldc)
 	{ return igemmlt<COL_TURING, 32, 0>(ltHandle, m, n, k, A, B, C, row_scale, lda, ldb, ldc); }
 
@@ -285,6 +288,9 @@ extern "C"
 
 	void cextractOutliers_turing(char * A, int *idx, char *out, int idx_size, int rows, int cols){ extractOutliers_turing(A, idx, out, idx_size, rows, cols); }
 	void cextractOutliers_ampere(char * A, int *idx, char *out, int idx_size, int rows, int cols){ extractOutliers_ampere(A, idx, out, idx_size, rows, cols); }
+
+	void cquantkbit_half(half* A, float *absmax, double *out, int ld, int num_elements, int k){ quantkbit_half(A, absmax, out, ld, num_elements, k); }
+	void cdequantkbit_half(double* A, float *absmax, half *out, int ld, int num_elements, int k){ dequantkbit_half(A, absmax, out, ld, num_elements, k); }
 
 #endif
 	void cquantize_blockwise_cpu_fp32(float *code, float *A, float *absmax, unsigned char *out, long long blocksize, long long n){ quantize_cpu(code, A, absmax, out, blocksize, n); }

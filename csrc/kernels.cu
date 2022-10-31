@@ -2655,9 +2655,20 @@ template <int FORMAT> __global__ void kExtractOutliers(char *A, int *idx, char *
 	}
 } 
 
+template <typename T> __global__ void kQuantkbit(T* A, float *absmax, double *out, int ld, int num_elements, int k)
+{
+}
+
+template <typename T> __global__ void kDequantkbit(double* A, float *absmax, T *out, int ld, int num_elements, int k)
+{
+}
+
 //==============================================================
 //                   TEMPLATE DEFINITIONS
 //==============================================================
+template __global__ void kQuantkbit(half* A, float *absmax, double *out, int rows, int cols, int k);
+template __global__ void kDequantkbit(double* A, float *absmax, half*out, int rows, int cols, int k);
+
 
 template __global__ void kExtractOutliers<COL_TURING>(char *A, int *idx, char *out, int idx_size, int rowsA, int colsA, int tiledRowsA, int tiledColsA);
 template __global__ void kExtractOutliers<COL_AMPERE>(char *A, int *idx, char *out, int idx_size, int rowsA, int colsA, int tiledRowsA, int tiledColsA);

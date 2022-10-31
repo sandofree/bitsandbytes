@@ -6,6 +6,7 @@ import ctypes as ct
 import operator
 import random
 import torch
+import math
 
 from typing import Tuple
 from torch import Tensor
@@ -1920,6 +1921,56 @@ def extract_outliers(A, SA, idx):
         lib.cextractOutliers_turing(ptrA, ptrIdx, ptrOut, idx_size, rows, cols)
     elif formatA == "col_ampere":
         lib.cextractOutliers_ampere(ptrA, ptrIdx, ptrOut, idx_size, rows, cols)
+    post_call(prev_device)
+
+    return out
+
+
+def quant_kbit(A, k=4, absmax=None, out=None):
+
+    ld = math.prod(A.shape[:-1])
+    num_elements = A.shape[-1]
+
+    n = A.numel()
+    num_per_value = 64//k
+    if out is None: out = torch.empty(math.ceil(n/num_per_value), device=A.device, dtype=torch.double)
+    if absmax is None: absmax = torch.empty(A.shape[:-1], device=A.device, dtype=torch.float32)
+
+    state = (absmax, A.shape)
+
+    ptrA = get_ptr(A)
+    ptrAbsmax = get_ptr(absmax)
+    ptrOut = get_ptr(out)
+    cld = ct.c_int32(ld)
+    cnum_elements = ct.c_int32(num_elements)
+    ck = ct.c_int32(k)
+
+    prev_device = pre_call(A.device)
+    lib.cquantkbit_half(ptrA, ptrAbsmax, ptrOut, cld, cnum_elements, ck)
+    post_call(prev_device)
+
+    return out, state
+
+def dequant_kbit(A, stateA, k=4, out=None):
+
+    absmax = stateA[0]
+    shapeA = stateA[1]
+
+    ld = math.prod(shapeA[:-1])
+    num_elements = shapeA[-1]
+
+    n = A.numel()
+    if out is None: out = torch.empty(shapeA, device=A.device, dtype=torch.half)
+
+    ptrA = get_ptr(A)
+    ptrAbsmax = get_ptr(absmax)
+    ptrOut = get_ptr(out)
+    cld = ct.c_int32(ld)
+    cnum_elements = ct.c_int32(num_elements)
+    ck = ct.c_int32(k)
+
+    prev_device = pre_call(A.device)
+    lib.cdequantkbit_half(ptrA, ptrAbsmax, ptrOut, cld, cnum_elements, ck)
     post_call(prev_device)
 
     return out

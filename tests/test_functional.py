@@ -2040,3 +2040,13 @@ def test_blockwise_cpu_large():
                 assert diffs[-1] < 0.011
             # print(sum(diffs)/len(diffs))
             # print(sum(reldiffs)/len(reldiffs))
+
+
+def test_quant_kbit():
+    A1 = torch.rand(10, 10, device='cuda').half()
+    out, Sout = F.quant_kbit(A1, k=4)
+
+    A2 = F.dequant_kbit(out, Sout, k=4)
+
+
+
