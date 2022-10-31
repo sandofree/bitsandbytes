@@ -632,16 +632,17 @@ template <int FORMAT> void extractOutliers(char * A, int *idx, char *out, int id
   CUDA_CHECK_RETURN(cudaPeekAtLastError());
 }
 
-template <typename T> void quantkbit(T* A, float *absmax, double *out, int ld, int num_elements, int k)
+template <typename T> void quantkbit(T* A, float *absmax, long long *out, int ld, int num_elements, int k)
 {
   int threads = 512;
   int num_blocks = ld;
+  assert(num_elements <= 512*32);
 
   kQuantkbit<T><<<num_blocks, threads>>>(A, absmax, out, ld, num_elements, k);
   CUDA_CHECK_RETURN(cudaPeekAtLastError());
 }
 
-template <typename T> void dequantkbit(double* A, float *absmax, T *out, int ld, int num_elements, int k)
+template <typename T> void dequantkbit(long long* A, float *absmax, T *out, int ld, int num_elements, int k)
 {
   int threads = 512;
   int num_blocks = ld;
@@ -653,8 +654,8 @@ template <typename T> void dequantkbit(double* A, float *absmax, T *out, int ld,
 //                   TEMPLATE DEFINITIONS
 //==============================================================
 
-template void quantkbit(half* A, float *absmax, double *out, int ld, int num_elements, int k);
-template void dequantkbit(double* A, float *absmax, half *out, int ld, int num_elements, int k);
+template void quantkbit(half* A, float *absmax, long long *out, int ld, int num_elements, int k);
+template void dequantkbit(long long* A, float *absmax, half *out, int ld, int num_elements, int k);
 
 template void extractOutliers<COL_TURING>(char * A, int *idx, char *out, int idx_size, int rows, int cols);
 template void extractOutliers<COL_AMPERE>(char * A, int *idx, char *out, int idx_size, int rows, int cols);

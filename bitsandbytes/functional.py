@@ -1933,8 +1933,8 @@ def quant_kbit(A, k=4, absmax=None, out=None):
 
     n = A.numel()
     num_per_value = 64//k
-    if out is None: out = torch.empty(math.ceil(n/num_per_value), device=A.device, dtype=torch.double)
-    if absmax is None: absmax = torch.empty(A.shape[:-1], device=A.device, dtype=torch.float32)
+    if out is None: out = torch.zeros(math.ceil(n/num_per_value), device=A.device, dtype=torch.int64)
+    if absmax is None: absmax = torch.zeros(A.shape[:-1], device=A.device, dtype=torch.float32)
 
     state = (absmax, A.shape)
 

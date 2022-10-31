@@ -2655,19 +2655,71 @@ template <int FORMAT> __global__ void kExtractOutliers(char *A, int *idx, char *
 	}
 } 
 
-template <typename T> __global__ void kQuantkbit(T* A, float *absmax, double *out, int ld, int num_elements, int k)
+#define GETMASK(index, size) ((((size_t)1 << (size)) - 1) << (index))
+#define READFROM(data, index, size) (((data) & GETMASK((index), (size))) >> (index))
+#define WRITETO(data, index, size, value) ((data) = (((data) & (~GETMASK((index), (size)))) | (((value) << (index)) & (GETMASK((index), (size))))))
+
+#define GET_BITS(x, pos) ((x & ( 1 << pos)) >> pos)
+
+__device__ void write_bits(long long *array, int array_idx, int bit_idx, int size, int value)
 {
+  long long data = __ldg(&array[array_idx]);
+  int mask = (((size_t)1 << size) -1) << bit_idx;
+  data = data & ~mask | value << bit_idx & mask;
+  array[array_idx] = data;
 }
 
-template <typename T> __global__ void kDequantkbit(double* A, float *absmax, T *out, int ld, int num_elements, int k)
+template <typename T> __global__ void kQuantkbit(T* A, float *absmax, long long *out, int ld, int num_elements, int k)
+{
+  typedef cub::BlockReduce<T, 512> BlockReduce;
+  typedef cub::BlockLoad<T, 512, 32, cub::BLOCK_LOAD_VECTORIZE> Load;
+
+  __shared__ typename Load::TempStorage load;
+  __shared__ typename BlockReduce::TempStorage reduce;
+
+  half maxval = __float2half(powf(2.0f, (float)k-1)-1.0f);
+  T data[32]; // 16k registers
+  const int initial_idx = (ld+num_elements)*blockIdx.x;
+  T local_absmax = -HLF_MAX;
+  int valid_items = 0;
+  const int num_block = 32*blockDim.x;
+  const int num_per_double = 64/k;
+
+
+  valid_items = num_elements - initial_idx > num_block ? num_block : num_elements - initial_idx;
+
+  Load(load).Load(&A[initial_idx], data, valid_items, 0.0f);
+
+  #pragma unroll 32
+  for(int j = 0; j < 32; j++)
+    local_absmax = fmaxf(fabsf(data[j]), local_absmax);
+
+  local_absmax = BlockReduce(reduce).Reduce(local_absmax, cub::Max(), valid_items);
+
+  local_absmax = __hdiv(1.0f,local_absmax);
+
+  #pragma unroll 32
+  for(int j = 0; j < 32; j++)
+  {
+    int q = __float2int_rn(data[j]*local_absmax*maxval);
+    int sub_idx = initial_idx+(threadIdx.x*32)+j;
+    int double_idx = sub_idx/num_per_double;
+    if((threadIdx.x*32)+j >= num_elements){ return; }
+    write_bits(out, double_idx, (sub_idx%num_per_double)*k, k, q);
+    if( (float)data[j] != 0.0)
+      printf("%i (%i %i)\n", q, double_idx, sub_idx %num_per_double);
+  }
+}
+
+template <typename T> __global__ void kDequantkbit(long long* A, float *absmax, T *out, int ld, int num_elements, int k)
 {
 }
 
 //==============================================================
 //                   TEMPLATE DEFINITIONS
 //==============================================================
-template __global__ void kQuantkbit(half* A, float *absmax, double *out, int rows, int cols, int k);
-template __global__ void kDequantkbit(double* A, float *absmax, half*out, int rows, int cols, int k);
+template __global__ void kQuantkbit(half* A, float *absmax, long long *out, int rows, int cols, int k);
+template __global__ void kDequantkbit(long long* A, float *absmax, half*out, int rows, int cols, int k);
 
 
 template __global__ void kExtractOutliers<COL_TURING>(char *A, int *idx, char *out, int idx_size, int rowsA, int colsA, int tiledRowsA, int tiledColsA);

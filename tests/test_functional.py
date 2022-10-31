@@ -1,7 +1,6 @@
 import math
 import random
 import time
-from itertools import product
 
 import einops
 import pytest
@@ -9,6 +8,8 @@ import torch
 
 import bitsandbytes as bnb
 from bitsandbytes import functional as F
+from itertools import product
+from bitarray.util import int2ba, ba2int
 
 torch.set_printoptions(
     precision=4, sci_mode=False, linewidth=120, edgeitems=20, threshold=10000
@@ -2043,10 +2044,32 @@ def test_blockwise_cpu_large():
 
 
 def test_quant_kbit():
-    A1 = torch.rand(10, 10, device='cuda').half()
-    out, Sout = F.quant_kbit(A1, k=4)
+    k = 4
+    A1 = torch.randn(2, 18, device='cuda').half()
+    absmax = A1.abs().max(1)[0]
+    scale = (2**(k-1))-1
+    out1 = torch.round(A1.float()/absmax.float().view(-1, 1)*scale)
+    print(out1)
 
-    A2 = F.dequant_kbit(out, Sout, k=4)
+    print(A1)
+    out, Sout = F.quant_kbit(A1, k=k)
+
+
+    #out1 = (A1/absmax.view(-1, 1)) 
+    #print(scale)
+    #print(out1)
+
+    values = []
+    for val in out:
+        bits = int2ba(val.item(), length=64, signed=True)
+        print(bits)
+        for start in range(64, 0, -k):
+            end = start - k
+            values.append(ba2int(bits[end:start], signed=True))
+
+
+    print(out1)
+    print(values)
 
 
 

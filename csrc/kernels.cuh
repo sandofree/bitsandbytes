@@ -120,8 +120,8 @@ template <int THREADS, int ITEMS_PER_THREAD, int TILE_ROWS, int TILE_COLS, int T
 
 template <int FORMAT> __global__ void kExtractOutliers(char *A, int *idx, char *out, int idx_size, int rowsA, int colsA, int tiledRowsA, int tiledColsA);
 
-template <typename T> __global__ void kQuantkbit(T* A, float *absmax, double *out, int ld, int num_elements, int k);
-template <typename T> __global__ void kDequantkbit(double* A, float *absmax, T *out, int ld, int num_elements, int k);
+template <typename T> __global__ void kQuantkbit(T* A, float *absmax, long long *out, int ld, int num_elements, int k);
+template <typename T> __global__ void kDequantkbit(long long* A, float *absmax, T *out, int ld, int num_elements, int k);
 
 #endif
 
