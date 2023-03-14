@@ -1,5 +1,4 @@
 import torch
-import bitsandbytes as bnb
 
 from typing import Optional
 
@@ -9,16 +8,12 @@ from torch.nn.parameter import Parameter
 import torch.nn.functional as F
 import torch.distributed as dist
 
-from bitsandbytes.optim import GlobalOptimManager
-
 class StableEmbedding(torch.nn.Embedding):
     def __init__(self, num_embeddings: int, embedding_dim: int, padding_idx: Optional[int] = None,
                  max_norm: Optional[float] = None, norm_type: float = 2., scale_grad_by_freq: bool = False,
                  sparse: bool = True, _weight: Optional[Tensor] = None) -> None:
         super(StableEmbedding, self).__init__(num_embeddings, embedding_dim, padding_idx, max_norm, norm_type, scale_grad_by_freq, False, _weight)
         self.norm = torch.nn.LayerNorm(embedding_dim)
-        GlobalOptimManager.get_instance().register_parameters(self.weight)
-        GlobalOptimManager.get_instance().override_config(self.weight, 'optim_bits', 32)
 
     def reset_parameters(self) -> None:
         torch.nn.init.xavier_uniform_(self.weight)
@@ -42,30 +37,6 @@ class StableEmbedding(torch.nn.Embedding):
 
         return self.norm(emb)
 
-class Linear8bit(nn.Linear):
-    def __init__(self, input_features, output_features, bias=True, quant_type='vector', index=None, args=None, sparse_decomp=False):
-        super(Linear8bit, self).__init__(input_features, output_features, bias)
-        self.quant_type = quant_type
-        self.index = index
-        self.args = args
-        self.iter = 0
-
-    def forward(self, x):
-        if self.iter % self.args.clip_freq == 0:
-            with torch.no_grad():
-                maxval, maxidx = torch.topk(torch.abs(self.weight.flatten()), k=self.args.clip_idx)
-                if not dist.is_initialized() or dist.get_rank() == 0:
-                    print('clip', maxval[-1].item())
-                self.weight.clip_(-maxval[-1], maxval[-1])
-        self.iter += 1
-
-
-        if self.args is not None:
-            out = bnb.nn.functional.sparse_decomposed_linear8bit(x, self.weight, self.bias, qval=self.args.sparse_decomp_val, quant_type=self.args.quant_type)
-        else:
-            out = bnb.nn.functional.linear8bit(x, self.weight, self.bias, quant_type=self.args.quant_type)
-
-        return out
 
 
 
