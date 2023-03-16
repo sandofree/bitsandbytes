@@ -19,6 +19,7 @@
     exit(1);                              \
   } }
 
+
 #define THREADS_PER_BLOCKS (512)
 
 typedef enum Operations_t

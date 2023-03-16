@@ -536,29 +536,33 @@ def test_cutlass_igemm(dim1, dim2):
         torch.testing.assert_allclose(out.float(), out2)
 
 
+model = [768, 1024, 1280, 1664]
+seqlen = [64, 256, 256, 256]
+batch = [512, 256, 256, 256]
+factor = [4, 4, 4, 4.9231]
+values = list(zip(model, seqlen, batch, factor))
+names = ['model_{0}_seqlen_{1}_batch_{2}_factor_{3}'.format(*vals) for vals in values]
+@pytest.mark.parametrize("model, seqlen, batch, factor", values, ids=names)
+def test_cutlass_bench(model, seqlen, batch, factor):
+    hidden = round(factor*model)
 
-def test_cutlass_bench():
     batch = 4
-    seq = 512
-    model = 1024
-    hidden = 8*model
-    t = Timer()
-    A = torch.randn(batch*seq, model, device='cuda')
+    A = torch.randn(batch*seqlen, model, device='cuda')
     B = torch.randn(model, hidden, device='cuda')
     A = A.half()
     B = B.half()
-    C = torch.zeros(batch*seq, hidden, device=A.device, dtype=B.dtype)
-    A2 = torch.randint(-128, 127, size=(model, batch*seq), device='cuda').to(torch.int8)
+    C = torch.zeros(batch*seqlen, hidden, device=A.device, dtype=B.dtype)
+    A2 = torch.randint(-128, 127, size=(model, batch*seqlen), device='cuda').to(torch.int8)
     B2 = torch.randint(-128, 127, size=(model, hidden), device='cuda').to(torch.int8)
-    C2 = torch.zeros(batch*seq, hidden, device=A.device, dtype=torch.int32)
+    C2 = torch.zeros(batch*seqlen, hidden, device=A.device, dtype=torch.int32)
 
-    for i in range(1000):
-        F.cutlass_igemm(A2.t(), B2, out=C2)
-    torch.cuda.synchronize()
+    for i in range(1):
+        F.cutlass_igemm(A2.t(), B2)
+    #torch.cuda.synchronize()
 
-    for i in range(1000):
+    for i in range(1):
         torch.mm(A, B, out=C)
-    torch.cuda.synchronize()
+    #torch.cuda.synchronize()
 
 
 

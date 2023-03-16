@@ -239,9 +239,9 @@ void cutlass_igemm(bool transposeA, bool transposeB, int m, int n, int k, void *
     cutlass::layout::ColumnMajor,              // LayoutOutput
     int32_t,                                     // ElementAccumulator
     cutlass::arch::OpClassWmmaTensorOp,            // tag indicating Tensor Cores
-    cutlass::arch::Sm75,                        // tag indicating target GPU compute architecture
-    cutlass::gemm::GemmShape<64, 128, 64>,
-    cutlass::gemm::GemmShape<32, 32, 64>,
+    cutlass::arch::Sm86,                        // tag indicating target GPU compute architecture
+    cutlass::gemm::GemmShape<256, 32, 64>,
+    cutlass::gemm::GemmShape<256, 32, 64>,
     cutlass::gemm::GemmShape<16, 16, 16>
     //cutlass::gemm::GemmShape<32, 32, 16>
   >;
@@ -250,8 +250,10 @@ void cutlass_igemm(bool transposeA, bool transposeB, int m, int n, int k, void *
   cutlass::Status status;
 
 
-  float alpha = 1.0f;
-  float beta = 0.0f;
+  //float alpha = 1.0f;
+  //float beta = 0.0f;
+  int alpha = 1;
+  int beta = 0;
 
   int8_t const *ptrA = (int8_t*)A;
   int8_t const *ptrB = (int8_t*)B;
@@ -274,7 +276,9 @@ void cutlass_igemm(bool transposeA, bool transposeB, int m, int n, int k, void *
 
   if (status != cutlass::Status::kSuccess)
 	{
+    //std::cout << "CUTLASS ERROR: Status " << status << std::endl;
 		printf("ERROR\n");
+    std::cout << cutlassGetStatusString(status) << std::endl;
   }
 } 
 

@@ -22,8 +22,9 @@ LIB := -L $(CUDA_HOME)/lib64 -lcudart -lcuda -lcublas -lcurand -lcusparse -L $(C
 #COMPUTE_CAPABILITY := -gencode arch=compute_70,code=sm_70 # Volta
 #COMPUTE_CAPABILITY := -gencode arch=compute_75,code=sm_75 # Maxwell
 #COMPUTE_CAPABILITY := -gencode arch=compute_70,code=sm_70 # Volta
-COMPUTE_CAPABILITY := -gencode arch=compute_75,code=sm_75 # Maxwell
+#COMPUTE_CAPABILITY := -gencode arch=compute_75,code=sm_75 # Maxwell
 #COMPUTE_CAPABILITY += -gencode arch=compute_80,code=sm_80 # Maxwell
+COMPUTE_CAPABILITY += -gencode arch=compute_86,code=sm_86 # Maxwell
 
 all: $(ROOT_DIR)/dependencies/cub $(BUILD_DIR) $(CUTLASS)
 	echo $(CONDA_PREFIX)
